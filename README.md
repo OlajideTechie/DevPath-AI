@@ -56,7 +56,6 @@ been measured.
 - Frontend and backend tests covering core UI, API, validation, and persistence
   behavior.
 
-<<<<<<< HEAD
 ## What is not implemented
 
 This is an **M1 onboarding prototype**, not a complete learning platform. It
@@ -64,8 +63,6 @@ does not include authentication, diagnostic assessments, generated roadmaps,
 lessons, code execution, AI features, or progress tracking. Those are possible
 future milestones and are intentionally not represented as working features.
 
-=======
->>>>>>> 8361cbf (dockerfile deployment configuration)
 ## Repository structure
 
 ```text
@@ -268,7 +265,6 @@ The backend test suite exercises PostgreSQL-backed application startup and
 JSONB persistence in addition to API validation and error behavior. The
 current milestone's recorded results are in [`docs/progress.md`](docs/progress.md).
 
-<<<<<<< HEAD
 ## Security and demo data
 
 Authentication and ownership checks are **not implemented**. A UUID is an
@@ -281,7 +277,7 @@ only the `.env.example` templates. Before using real users, add authentication,
 ownership enforcement, privacy and deletion controls, and abuse protection.
 For deployment, use managed secrets, HTTPS, and a narrowly configured
 `FRONTEND_ORIGINS` allowlist.
-=======
+
 ## Continuous integration and Render deployment
 
 The GitHub Actions workflow at
@@ -318,4 +314,3 @@ separately, and set its build-time `VITE_API_BASE_URL` to the deployed backend
 origin. Set `FRONTEND_ORIGINS` to the exact deployed frontend origin. Confirm
 the resulting backend deployment is healthy at
 `https://<backend-service>.onrender.com/actuator/health`.
->>>>>>> 8361cbf (dockerfile deployment configuration)
