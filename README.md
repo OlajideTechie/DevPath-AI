@@ -1,37 +1,170 @@
 # DevPath AI
 
-M1 project scaffold for the DevPath AI onboarding release. This repository
-contains the learner profile API and onboarding flow. Learning, assessment,
-roadmap, and AI features have not been implemented.
+**Turn your QA experience into a foundation for Java backend engineering.**
 
-## Prerequisites
+DevPath AI is an onboarding prototype for QA engineers who want to move into
+Java backend development. Instead of treating a learner as a blank slate, the
+product starts by understanding their testing background, existing skills,
+Java proficiency, and available study time.
 
-- Node.js 22.12+ and npm
+This hackathon release delivers the first vertical slice: a landing page, a
+guided learner-profile wizard, and a backend that validates, stores, and
+returns that profile. It demonstrates the foundation for a more personal
+learning journey; it does **not** yet teach lessons, assess coding ability, or
+generate a roadmap.
+
+## Why it matters
+
+Many career-transition resources offer generic course lists without connecting
+new material to what a learner already knows or the time they can realistically
+commit. QA engineers bring valuable foundations—such as API testing, SQL,
+debugging, and systematic investigation—that can help make a transition into
+backend development more relevant and achievable.
+
+DevPath AI is designed to make that starting point explicit:
+
+- **Recognize transferable skills:** capture a learner's QA role,
+  specialization, experience, and existing skills.
+- **Make the next step personal:** capture Java proficiency, study days,
+  available minutes, and learning preferences before designing future learning.
+- **Build trust with real persistence:** save the submitted profile in
+  PostgreSQL and retrieve it from the API rather than showing a simulated
+  success.
+- **Create a foundation for evidence-based progress:** future learning can
+  build on learner context and demonstrated work, rather than a one-size-fits-
+  all roadmap.
+
+The intended impact is a more grounded transition experience: learners can
+start from their actual strengths and constraints, and a future product can
+adapt instruction as they demonstrate progress. This release proves the
+onboarding and persistence foundation—not that learning outcomes have already
+been measured.
+
+## What is implemented
+
+- Responsive landing page and four-step onboarding experience.
+- Typed frontend API client for learner profile creation and retrieval.
+- `POST /api/v1/learners` with request validation, normalized skills,
+  server-controlled role/language/status, and a `201 Created` response with a
+  `Location` header.
+- `GET /api/v1/learners/{learnerId}` with persisted profile data and consistent
+  not-found and invalid-ID errors.
+- PostgreSQL learner storage with JSONB fields managed by a Flyway migration.
+- Minimal public health check at `GET /actuator/health`.
+- OpenAPI specification and interactive Swagger UI.
+- Configurable CORS for explicitly allowed frontend origins.
+- Frontend and backend tests covering core UI, API, validation, and persistence
+  behavior.
+
+<<<<<<< HEAD
+## What is not implemented
+
+This is an **M1 onboarding prototype**, not a complete learning platform. It
+does not include authentication, diagnostic assessments, generated roadmaps,
+lessons, code execution, AI features, or progress tracking. Those are possible
+future milestones and are intentionally not represented as working features.
+
+=======
+>>>>>>> 8361cbf (dockerfile deployment configuration)
+## Repository structure
+
+```text
+.
+├── backend/
+│   ├── src/main/java/ai/devpath/
+│   │   ├── common/                 # Shared CORS configuration and API errors
+│   │   └── learner/                # Learner controller, DTOs, service, model,
+│   │                               # repository, and profile enums
+│   ├── src/main/resources/
+│   │   ├── db/migration/           # Versioned PostgreSQL schema (Flyway)
+│   │   └── application.properties  # Database, server, health, and CORS config
+│   ├── src/test/java/              # API, repository, health, and OpenAPI tests
+│   ├── .env.example                # Safe local configuration template
+│   ├── mvnw                        # Maven wrapper
+│   └── pom.xml                     # Spring Boot dependencies and build
+├── frontend/
+│   ├── src/
+│   │   ├── api/                    # Typed learner API client and tests
+│   │   ├── onboarding/             # Wizard UI, styles, and interaction tests
+│   │   ├── assets/                 # Static visual assets
+│   │   ├── App.tsx                 # Routes and landing page
+│   │   └── index.css               # Global styles and Tailwind entry point
+│   ├── .env.example                # Frontend API URL template
+│   ├── package.json                # Scripts and dependencies
+│   └── vite.config.ts              # Vite and frontend test configuration
+├── docs/
+│   ├── product-requirements.md     # M1 scope, acceptance criteria, future scope
+│   ├── architecture-and-api.md     # Data model and API contracts
+│   ├── ui-flow.md                  # Screen and interaction requirements
+│   ├── decisions.md                # Technical and product decisions
+│   ├── codex-prompts.md            # Reusable project prompts
+│   └── progress.md                 # Milestone status and verification record
+├── .gitignore
+└── README.md
+```
+
+### How the structure creates value
+
+- **`frontend/` keeps the demo understandable:** presentation, onboarding
+  interactions, and API communication are separated so the user flow can
+  evolve without coupling every screen to persistence details.
+- **`backend/` protects the data contract:** controllers handle HTTP, services
+  apply profile rules, repositories persist records, and DTOs define the API
+  rather than exposing database entities.
+- **Flyway migrations make storage repeatable:** the learner schema is
+  version-controlled and can be applied consistently across environments.
+- **`docs/` keeps scope honest:** requirements and decisions distinguish
+  working M1 behavior from ideas reserved for later milestones.
+
+## Architecture
+
+```text
+React + TypeScript + Vite
+          │ REST/JSON
+          ▼
+Spring Boot modular monolith
+          │ Spring Data JPA + Flyway
+          ▼
+       PostgreSQL
+```
+
+The frontend communicates with the backend over HTTP in local development. The
+backend owns validation and server-controlled profile fields. PostgreSQL stores
+the profile, including JSONB skill and study-day data. There are no
+microservices, queues, or AI calls in this release.
+
+## Run locally
+
+### Requirements
+
+- Node.js 22.12 or newer and npm
 - Java 21
-- PostgreSQL 17
+- PostgreSQL 17, running locally
 
-## Start PostgreSQL
+This setup uses a locally installed PostgreSQL service; Docker is not required.
 
-Install and start PostgreSQL using your operating system's package manager or
-service manager. Create a local database and role using a PostgreSQL
-superuser:
+### 1. Create a local database
+
+Connect to PostgreSQL as a local administrator:
 
 ```sh
 psql postgres
 ```
 
-Then run these SQL statements in the `psql` prompt:
+Create a role and database for development:
 
 ```sql
 CREATE ROLE devpath LOGIN PASSWORD 'devpath_local_only';
 CREATE DATABASE devpath OWNER devpath;
 ```
 
-The sample credentials are for local development only; do not use them in
-shared or deployed environments. If you choose different credentials, update
-`backend/.env` to match.
+These credentials are examples for a local machine only. Never reuse them for
+a shared, public, or production environment. If you choose different values,
+update the matching variables in `backend/.env`.
 
-## Run the backend
+### 2. Start the backend
+
+In a terminal:
 
 ```sh
 cd backend
@@ -42,23 +175,12 @@ set +a
 ./mvnw spring-boot:run
 ```
 
-The backend connects to PostgreSQL on `localhost:5432` and serves the learner
-API at `/api/v1/learners`. Its minimal health endpoint is
-<http://localhost:8080/actuator/health>.
-API CORS is restricted to the origins configured by `FRONTEND_ORIGINS` in
-`backend/.env` (default local origins: `http://localhost:5173` and
-`http://127.0.0.1:5173`). Set `FRONTEND_ORIGINS` to the exact frontend origin
-when deploying.
+The first start applies the Flyway migration. The API listens on
+`http://localhost:8080` by default.
 
-Interactive API documentation is available at
-<http://localhost:8080/swagger-ui/index.html>; the OpenAPI JSON is at
-<http://localhost:8080/v3/api-docs>. Swagger documents the learner endpoints.
-Actuator exposes only the health endpoint; its health response omits component
-details.
+### 3. Start the frontend
 
-## Run the frontend
-
-In a second terminal:
+In another terminal:
 
 ```sh
 cd frontend
@@ -67,18 +189,72 @@ npm install
 npm run dev
 ```
 
-Vite prints the local development URL after startup. The onboarding flow sends
-learner requests to the API base URL in `frontend/.env.local`; the example
-points to `http://localhost:8080`.
+Open the local URL printed by Vite (normally
+`http://localhost:5173`). The example `VITE_API_BASE_URL` points to
+`http://localhost:8080`.
+
+The backend's `FRONTEND_ORIGINS` setting must list the exact browser origin
+used for the frontend. The local example allows both `http://localhost:5173`
+and `http://127.0.0.1:5173`. Restart the backend after changing its
+environment. For a deployed frontend, configure `VITE_API_BASE_URL` with the
+reachable HTTPS API origin, configure `FRONTEND_ORIGINS` with the deployed
+frontend origin, and rebuild/restart as appropriate.
+
+## API and operational endpoints
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| `POST` | `/api/v1/learners` | Validate and save a learner profile; returns `201` and a `Location` header |
+| `GET` | `/api/v1/learners/{learnerId}` | Retrieve a saved learner profile |
+| `GET` | `/actuator/health` | Minimal service health status |
+| `GET` | `/swagger-ui/index.html` | Interactive API documentation |
+| `GET` | `/v3/api-docs` | OpenAPI JSON document |
+
+When the backend is running locally, Swagger UI is available at
+<http://localhost:8080/swagger-ui/index.html>, and the health check is at
+<http://localhost:8080/actuator/health>. Only the health endpoint is exposed
+from Actuator; component details are hidden.
+
+Example profile creation:
+
+```sh
+curl -i http://localhost:8080/api/v1/learners \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "currentRole": "QA Engineer",
+    "yearsOfExperience": 5,
+    "specialization": "API Testing",
+    "existingSkills": ["Postman", "SQL"],
+    "programmingLevel": "BEGINNER",
+    "studyDays": ["MONDAY", "WEDNESDAY", "SATURDAY"],
+    "dailyMinutes": 45,
+    "learningStyle": "PRACTICAL"
+  }'
+```
+
+The successful response includes an `id`. Use that ID to retrieve the saved
+profile:
+
+```sh
+curl http://localhost:8080/api/v1/learners/<learner-id>
+```
+
+Invalid profile input returns HTTP 400 with field-level errors. A valid UUID
+that does not identify a saved profile returns HTTP 404.
 
 ## Build and test
 
+Run the frontend checks:
+
 ```sh
-(cd frontend && npm run build && npm test && npm run lint)
-(cd backend && ./mvnw -DskipTests package)
+cd frontend
+npm test
+npm run build
+npm run lint
 ```
 
-Run backend tests with PostgreSQL available and the backend environment loaded:
+Run backend tests with PostgreSQL available and the backend environment
+loaded:
 
 ```sh
 cd backend
@@ -88,4 +264,58 @@ set +a
 ./mvnw test
 ```
 
-Stop PostgreSQL using the service manager used to start it.
+The backend test suite exercises PostgreSQL-backed application startup and
+JSONB persistence in addition to API validation and error behavior. The
+current milestone's recorded results are in [`docs/progress.md`](docs/progress.md).
+
+<<<<<<< HEAD
+## Security and demo data
+
+Authentication and ownership checks are **not implemented**. A UUID is an
+identifier, not access control, and the profile retrieval endpoint is not
+suitable for private real-user data. Use synthetic demo profiles only. Do not
+collect personal details or expose real learner records in a public demo.
+
+Environment files containing local configuration are ignored by Git; commit
+only the `.env.example` templates. Before using real users, add authentication,
+ownership enforcement, privacy and deletion controls, and abuse protection.
+For deployment, use managed secrets, HTTPS, and a narrowly configured
+`FRONTEND_ORIGINS` allowlist.
+=======
+## Continuous integration and Render deployment
+
+The GitHub Actions workflow at
+[`.github/workflows/ci-cd.yml`](.github/workflows/ci-cd.yml) runs on pull
+requests to `main`, pushes to `main`, and manual dispatches. It runs the
+frontend test suite and backend tests against an ephemeral PostgreSQL 17
+service. A Render deployment is triggered only for a push to `main` or a
+manual run on `main`, and only after both test jobs pass. Pull requests never
+trigger a deployment. Render performs the service build during deployment.
+
+To enable deployment:
+
+1. Create a Render **Web Service** for the backend from this repository.
+   Choose Docker, set the root directory to `backend`, and set the Dockerfile
+   path to `Dockerfile`. Set the health check path to `/actuator/health`.
+2. Configure the service's runtime environment variables in Render:
+   `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`,
+   `SPRING_DATASOURCE_PASSWORD`, and `FRONTEND_ORIGINS`. Use the internal
+   database URL if the PostgreSQL provider offers one; otherwise use the
+   provider's external TLS connection URL converted to JDBC format. Do not
+   store production credentials in the repository.
+3. In the Render service settings, create a deploy hook and disable automatic
+   deploys so deployment happens only after CI passes.
+4. Add the full hook URL in the GitHub repository's **Settings → Secrets and
+   variables → Actions** as `RENDER_DEPLOY_HOOK_URL`. The backend test
+   database defaults to temporary CI-only credentials; optionally set the
+   Actions variable `CI_POSTGRES_USER` and secret `CI_POSTGRES_PASSWORD` to
+   customize them. These credentials are used only by the ephemeral PostgreSQL
+   service for tests, not by the Render deployment.
+5. Push to `main` or manually run **CI and Render deployment** on `main`.
+
+The workflow deploys **only the backend**. Configure frontend hosting
+separately, and set its build-time `VITE_API_BASE_URL` to the deployed backend
+origin. Set `FRONTEND_ORIGINS` to the exact deployed frontend origin. Confirm
+the resulting backend deployment is healthy at
+`https://<backend-service>.onrender.com/actuator/health`.
+>>>>>>> 8361cbf (dockerfile deployment configuration)
