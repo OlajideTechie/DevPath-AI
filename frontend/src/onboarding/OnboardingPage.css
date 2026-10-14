@@ -323,6 +323,68 @@
   background: #e5ede2;
 }
 
+.role-card > strong {
+  flex: 1;
+  color: #354a39;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.multi-select-options {
+  display: flex;
+  max-height: 156px;
+  flex-wrap: wrap;
+  gap: 6px;
+  overflow-y: auto;
+  margin-top: 8px;
+  padding: 2px;
+}
+
+.multi-select-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 31px;
+  padding: 5px 9px;
+  border: 1px solid #dfe5dd;
+  border-radius: 999px;
+  background: #fff;
+  color: #58685a;
+  cursor: pointer;
+  font: inherit;
+  font-size: 10px;
+  transition: border-color 150ms ease, background 150ms ease, color 150ms ease;
+}
+
+.multi-select-option:hover:not(:disabled) {
+  border-color: #9eb49d;
+  background: #f4f8f2;
+  color: #355d43;
+}
+
+.multi-select-option:focus-visible,
+.skill-list button:focus-visible {
+  outline: 3px solid #7e9b85;
+  outline-offset: 2px;
+}
+
+.multi-select-option > span {
+  color: #66826b;
+  font-size: 13px;
+  line-height: 1;
+}
+
+.multi-select-option:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.multi-select-empty {
+  margin: 4px 0;
+  color: #838e85;
+  font-size: 10px;
+}
+
 .fixed-goal {
   display: flex;
   align-items: center;

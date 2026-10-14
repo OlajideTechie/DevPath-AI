@@ -1,5 +1,8 @@
 import { BrowserRouter, Link, Navigate, Route, Routes } from 'react-router-dom'
+import DashboardPage from './dashboard/DashboardPage'
+import LessonLabPage from './lesson/LessonLabPage'
 import OnboardingPage from './onboarding/OnboardingPage'
+import RecallPage from './recall/RecallPage'
 
 const benefits = [
   {
@@ -199,6 +202,9 @@ function App() {
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/onboarding" element={<OnboardingPage />} />
+        <Route path="/dashboard/:learnerId" element={<DashboardPage />} />
+        <Route path="/lessons/:lessonId" element={<LessonLabPage />} />
+        <Route path="/recall/:learnerId" element={<RecallPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

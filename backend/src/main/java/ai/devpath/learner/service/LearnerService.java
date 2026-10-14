@@ -1,6 +1,9 @@
 package ai.devpath.learner.service;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -16,6 +19,7 @@ import ai.devpath.learner.repository.LearnerRepository;
 
 @Service
 public class LearnerService {
+    private static final String CURRENT_ROLE = "QA Engineer";
     private static final String TARGET_ROLE = "Java Backend Developer";
 
     private final LearnerRepository learnerRepository;
@@ -23,19 +27,22 @@ public class LearnerService {
     public LearnerService(LearnerRepository learnerRepository) {
         this.learnerRepository = learnerRepository;
     }
-    
-    // This method creates a new learner profile based on the provided request and 
-    // returns a response containing the created learner's details.
+
     @Transactional
     public LearnerCreatedResponse createLearner(CreateLearnerRequest request) {
+        Set<String> seenSkills = new HashSet<>();
         List<String> existingSkills = request.existingSkills().stream()
                 .map(String::trim)
-                .distinct()
+                .filter(skill -> !skill.isEmpty())
+                .filter(skill -> seenSkills.add(skill.toLowerCase(Locale.ROOT)))
+                .toList();
+        List<String> specializations = request.specializations().stream()
+                .map(String::trim)
                 .toList();
         Learner learner = new Learner(
-                request.currentRole(),
-                request.yearsOfExperience(),
-                request.specialization(),
+                CURRENT_ROLE,
+                request.experienceBand(),
+                specializations,
                 existingSkills,
                 TARGET_ROLE,
                 PreferredLanguage.JAVA,
@@ -63,8 +70,8 @@ public class LearnerService {
         return new LearnerProfileResponse(
                 learner.getId(),
                 learner.getCurrentRole(),
-                learner.getYearsOfExperience(),
-                learner.getSpecialization(),
+                learner.getExperienceBand(),
+                learner.getSpecializations(),
                 learner.getExistingSkills(),
                 learner.getTargetRole(),
                 learner.getPreferredLanguage(),

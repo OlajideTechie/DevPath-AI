@@ -2,10 +2,12 @@ import { useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
 import { Link } from 'react-router-dom'
 import {
   createLearner,
+  experienceBands,
   getLearner,
   LearnerApiError,
   studyDays,
   type CreateLearnerRequest,
+  type ExperienceBand,
   type LearnerCreatedResponse,
   type LearnerProfileResponse,
   type LearningStyle,
@@ -17,11 +19,9 @@ import './OnboardingPage.css'
 const steps = ['Background', 'Java goal', 'Availability', 'Review'] as const
 
 interface FormValues {
-  currentRole: string
-  yearsOfExperience: string
-  specialization: string
+  experienceBand: ExperienceBand | ''
+  specializations: string[]
   skills: string[]
-  skillInput: string
   programmingLevel: ProgrammingLevel | ''
   selectedDays: StudyDay[]
   dailyMinutes: string
@@ -31,16 +31,47 @@ interface FormValues {
 type FieldErrors = Record<string, string>
 
 const initialValues: FormValues = {
-  currentRole: '',
-  yearsOfExperience: '',
-  specialization: '',
+  experienceBand: '',
+  specializations: [],
   skills: [],
-  skillInput: '',
   programmingLevel: '',
   selectedDays: [],
   dailyMinutes: '30',
   learningStyle: '',
 }
+
+const CURRENT_ROLE = 'QA Engineer'
+
+const qaSpecializations = [
+  'Manual Testing',
+  'API Testing',
+  'Test Automation',
+  'Mobile Application Testing',
+  'Performance Testing',
+  'Security Testing',
+  'Database Testing',
+  'Quality Engineering / SDET',
+  'Test Leadership / QA Management',
+]
+
+const skillOptions = [
+  'Postman',
+  'REST APIs',
+  'SQL',
+  'JavaScript',
+  'TypeScript',
+  'Python',
+  'Java',
+  'Selenium',
+  'Cypress',
+  'Playwright',
+  'Appium',
+  'JMeter',
+  'Git',
+  'Docker',
+  'CI/CD',
+  'PostgreSQL',
+]
 
 const programmingLevels: { value: ProgrammingLevel; label: string; hint: string }[] = [
   { value: 'BEGINNER', label: 'Beginner', hint: 'I am new to programming' },
@@ -57,22 +88,11 @@ const learningStyles: { value: LearningStyle; label: string; hint: string }[] = 
 function validateStep(step: number, values: FormValues): FieldErrors {
   const errors: FieldErrors = {}
   if (step === 0) {
-    if (!values.currentRole.trim()) errors.currentRole = 'Enter your current role.'
-    else if (values.currentRole.trim().length > 100) {
-      errors.currentRole = 'Use 100 characters or fewer.'
-    }
-
-    const years = Number(values.yearsOfExperience)
-    if (values.yearsOfExperience === '') {
-      errors.yearsOfExperience = 'Enter your years of experience.'
-    } else if (!Number.isInteger(years) || years < 0 || years > 50) {
-      errors.yearsOfExperience = 'Enter a whole number from 0 to 50.'
-    }
-
-    if (!values.specialization.trim()) {
-      errors.specialization = 'Enter your QA specialization.'
-    } else if (values.specialization.trim().length > 100) {
-      errors.specialization = 'Use 100 characters or fewer.'
+    if (!values.experienceBand) errors.experienceBand = 'Choose your experience range.'
+    if (values.specializations.length === 0) {
+      errors.specializations = 'Choose at least one QA specialization.'
+    } else if (values.specializations.length > 9) {
+      errors.specializations = 'Choose no more than 9 specializations.'
     }
     if (values.skills.length > 20) errors.skills = 'Add no more than 20 skills.'
   }
@@ -99,9 +119,8 @@ function validateStep(step: number, values: FormValues): FieldErrors {
 
 function toRequest(values: FormValues): CreateLearnerRequest {
   return {
-    currentRole: values.currentRole.trim(),
-    yearsOfExperience: Number(values.yearsOfExperience),
-    specialization: values.specialization.trim(),
+    experienceBand: values.experienceBand as ExperienceBand,
+    specializations: values.specializations,
     existingSkills: values.skills,
     programmingLevel: values.programmingLevel as ProgrammingLevel,
     studyDays: values.selectedDays,
@@ -135,34 +154,6 @@ function OnboardingPage() {
       return next
     })
     setSubmitError('')
-  }
-
-  function addSkill(event?: FormEvent | KeyboardEvent<HTMLInputElement>) {
-    event?.preventDefault()
-    const skill = values.skillInput.trim()
-    if (!skill) return
-    if (values.skills.some((current) => current.toLowerCase() === skill.toLowerCase())) {
-      setErrors((current) => ({ ...current, skills: 'That skill is already on your list.' }))
-      return
-    }
-    if (values.skills.length >= 20) {
-      setErrors((current) => ({ ...current, skills: 'Add no more than 20 skills.' }))
-      return
-    }
-    setValues((current) => ({
-      ...current,
-      skills: [...current.skills, skill],
-      skillInput: '',
-    }))
-    setErrors((current) => {
-      const next = { ...current }
-      delete next.skills
-      return next
-    })
-  }
-
-  function removeSkill(skillToRemove: string) {
-    updateValue('skills', values.skills.filter((skill) => skill !== skillToRemove))
   }
 
   function toggleDay(day: StudyDay) {
@@ -261,11 +252,18 @@ function OnboardingPage() {
             <p className="onboarding-eyebrow">PROFILE SAVED</p>
             <h2 id="success-title">Your profile is saved.</h2>
             <p className="success-description">
-              Your onboarding details have been saved. You can retrieve the saved
-              profile from the server below.
+              Your onboarding details have been saved. Your starting lesson is
+              ready, based on your programming level and QA experience.
             </p>
+            <Link
+              className="wizard-button wizard-button-primary dashboard-continue"
+              to={`/dashboard/${createdLearner.id}`}
+            >
+              Continue to your learning dashboard
+              <span aria-hidden="true">→</span>
+            </Link>
             <button
-              className="wizard-button wizard-button-primary"
+              className="wizard-button wizard-button-secondary"
               type="button"
               onClick={() => void loadSavedProfile()}
               disabled={isLoadingProfile}
@@ -311,8 +309,6 @@ function OnboardingPage() {
                   values={values}
                   errors={errors}
                   onChange={updateValue}
-                  onAddSkill={addSkill}
-                  onRemoveSkill={removeSkill}
                 />
               )}
               {step === 1 && (
@@ -405,76 +401,146 @@ interface BackgroundStepProps {
   values: FormValues
   errors: FieldErrors
   onChange: <K extends keyof FormValues>(field: K, value: FormValues[K]) => void
-  onAddSkill: (event?: FormEvent | KeyboardEvent<HTMLInputElement>) => void
-  onRemoveSkill: (skill: string) => void
 }
 
-function BackgroundStep({ values, errors, onChange, onAddSkill, onRemoveSkill }: BackgroundStepProps) {
+function BackgroundStep({ values, errors, onChange }: BackgroundStepProps) {
   return (
     <div className="wizard-fields">
-      <TextField
-        id="currentRole"
-        label="Current role"
-        placeholder="e.g. QA Engineer"
-        value={values.currentRole}
-        error={errors.currentRole}
-        onChange={(value) => onChange('currentRole', value)}
-      />
-      <TextField
-        id="yearsOfExperience"
-        label="Years of experience"
-        type="number"
-        min={0}
-        max={50}
-        placeholder="e.g. 5"
-        value={values.yearsOfExperience}
-        error={errors.yearsOfExperience}
-        onChange={(value) => onChange('yearsOfExperience', value)}
-      />
-      <TextField
-        id="specialization"
-        label="QA specialization"
-        placeholder="e.g. API Testing"
-        value={values.specialization}
-        error={errors.specialization}
-        onChange={(value) => onChange('specialization', value)}
-      />
       <div className="field-group">
-        <label className="field-label" htmlFor="skillInput">Skills you already use <span>(optional)</span></label>
-        <p className="field-hint">Add up to 20 skills. Press Enter or select Add skill.</p>
-        <div className="skill-entry">
-          <input
-            id="skillInput"
-            value={values.skillInput}
-            maxLength={100}
-            onChange={(event) => onChange('skillInput', event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') onAddSkill(event)
-            }}
-            aria-describedby={errors.skills ? 'skills-error' : undefined}
-          />
-          <button type="button" className="add-skill-button" onClick={() => onAddSkill()}>
-            Add skill
-          </button>
+        <span className="field-label" id="currentRole-label">Current role</span>
+        <div className="fixed-goal role-card" role="group" aria-labelledby="currentRole-label">
+          <span className="fixed-goal-icon" aria-hidden="true">✓</span>
+          <strong>{CURRENT_ROLE}</strong>
+          <span className="fixed-goal-lock">Set for this demo</span>
         </div>
-        {errors.skills && <FieldError id="skills-error" message={errors.skills} />}
-        {values.skills.length > 0 && (
-          <ul className="skill-list" aria-label="Added skills">
-            {values.skills.map((skill) => (
-              <li key={skill}>
-                <span>{skill}</span>
-                <button
-                  type="button"
-                  aria-label={`Remove ${skill}`}
-                  onClick={() => onRemoveSkill(skill)}
-                >
-                  ×
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
       </div>
+      <div className="field-group">
+        <label className="field-label" htmlFor="experienceBand">Years of experience</label>
+        <select
+          className={`text-input${errors.experienceBand ? ' has-error' : ''}`}
+          id="experienceBand"
+          name="experienceBand"
+          value={values.experienceBand}
+          onChange={(event) => onChange('experienceBand', event.target.value as ExperienceBand | '')}
+          aria-invalid={Boolean(errors.experienceBand)}
+          aria-describedby={errors.experienceBand ? 'experienceBand-error' : undefined}
+        >
+          <option value="">Choose a range</option>
+          {experienceBands.map((band) => (
+            <option key={band.value} value={band.value}>{band.label}</option>
+          ))}
+        </select>
+        {errors.experienceBand && <FieldError id="experienceBand-error" message={errors.experienceBand} />}
+      </div>
+      <MultiSelectField
+        id="specializations"
+        label="QA specialization"
+        hint="Search and select at least one area. You can choose multiple."
+        options={qaSpecializations}
+        selected={values.specializations}
+        error={errors.specializations}
+        onChange={(selected) => onChange('specializations', selected)}
+      />
+      <MultiSelectField
+        id="skills"
+        label="Existing technical skills"
+        optional
+        hint="Search and select any skills you already use, or skip this field."
+        options={skillOptions}
+        selected={values.skills}
+        error={errors.skills}
+        onChange={(selected) => onChange('skills', selected)}
+      />
+    </div>
+  )
+}
+
+function MultiSelectField({
+  id,
+  label,
+  hint,
+  options,
+  selected,
+  error,
+  optional = false,
+  onChange,
+}: {
+  id: string
+  label: string
+  hint: string
+  options: string[]
+  selected: string[]
+  error?: string
+  optional?: boolean
+  onChange: (selected: string[]) => void
+}) {
+  const [query, setQuery] = useState('')
+  const availableOptions = options.filter(
+    (option) =>
+      !selected.includes(option) &&
+      option.toLowerCase().includes(query.trim().toLowerCase()),
+  )
+
+  function addOption(option: string) {
+    const limit = id === 'skills' ? 20 : 9
+    if (selected.length >= limit) return
+    onChange([...selected, option])
+    setQuery('')
+  }
+
+  return (
+    <div className="field-group">
+      <label className="field-label" htmlFor={`${id}-search`}>
+        {label} {optional && <span>(optional)</span>}
+      </label>
+      <p className="field-hint" id={`${id}-hint`}>{hint}</p>
+      <input
+        className="text-input"
+        id={`${id}-search`}
+        type="search"
+        value={query}
+        placeholder="Type to filter options"
+        onChange={(event) => setQuery(event.target.value)}
+        onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
+          if (event.key === 'Enter' && availableOptions[0]) {
+            event.preventDefault()
+            addOption(availableOptions[0])
+          }
+        }}
+        aria-invalid={Boolean(error)}
+        aria-describedby={[`${id}-hint`, error ? `${id}-error` : ''].filter(Boolean).join(' ')}
+      />
+      <div className="multi-select-options" role="group" aria-label={`${label} options`}>
+        {availableOptions.length > 0 ? availableOptions.map((option) => (
+          <button
+            className="multi-select-option"
+            type="button"
+            key={option}
+            onClick={() => addOption(option)}
+            disabled={selected.length >= (id === 'skills' ? 20 : 9)}
+          >
+            <span aria-hidden="true">+</span>
+            {option}
+          </button>
+        )) : <p className="multi-select-empty">No matching options.</p>}
+      </div>
+      {selected.length > 0 && (
+        <ul className="skill-list" aria-label={`Selected ${label.toLowerCase()}`}>
+          {selected.map((value) => (
+            <li key={value}>
+              <span>{value}</span>
+              <button
+                type="button"
+                aria-label={`Remove ${value}`}
+                onClick={() => onChange(selected.filter((item) => item !== value))}
+              >
+                ×
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      {error && <FieldError id={`${id}-error`} message={error} />}
     </div>
   )
 }
@@ -605,9 +671,12 @@ function ReviewStep({ values, errors, onEdit }: ReviewStepProps) {
         </div>
       )}
       <ReviewGroup title="Your background" step={0} onEdit={onEdit}>
-        <ReviewRow label="Current role" value={values.currentRole || 'Not provided'} />
-        <ReviewRow label="Experience" value={`${values.yearsOfExperience || '—'} years`} />
-        <ReviewRow label="Specialization" value={values.specialization || 'Not provided'} />
+        <ReviewRow label="Current role" value={CURRENT_ROLE} />
+        <ReviewRow label="Experience" value={experienceBandLabel(values.experienceBand)} />
+        <ReviewRow
+          label="QA specializations"
+          value={values.specializations.join(', ') || 'Not selected'}
+        />
         <ReviewRow label="Existing skills" value={values.skills.join(', ') || 'None added'} />
       </ReviewGroup>
       <ReviewGroup title="Your Java goal" step={1} onEdit={onEdit}>
@@ -672,8 +741,8 @@ function SavedProfile({ profile }: { profile: LearnerProfileResponse }) {
       <dl>
         <ReviewRow label="Current role" value={profile.currentRole} />
         <ReviewRow label="Target role" value={profile.targetRole} />
-        <ReviewRow label="Experience" value={`${profile.yearsOfExperience} years`} />
-        <ReviewRow label="Specialization" value={profile.specialization} />
+        <ReviewRow label="Experience" value={experienceBandLabel(profile.experienceBand)} />
+        <ReviewRow label="QA specializations" value={profile.specializations.join(', ')} />
         <ReviewRow label="Skills" value={profile.existingSkills.join(', ') || 'None'} />
         <ReviewRow label="Study days" value={profile.studyDays.map(formatStudyDay).join(', ')} />
         <ReviewRow label="Daily time" value={`${profile.dailyMinutes} minutes`} />
@@ -736,6 +805,10 @@ function formatStudyDay(day: StudyDay): string {
 
 function formatEnum(value: string): string {
   return value.charAt(0) + value.slice(1).toLowerCase()
+}
+
+function experienceBandLabel(value: ExperienceBand | ''): string {
+  return experienceBands.find((band) => band.value === value)?.label ?? 'Not selected'
 }
 
 export default OnboardingPage

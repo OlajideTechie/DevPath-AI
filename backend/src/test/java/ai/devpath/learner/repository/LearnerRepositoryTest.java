@@ -10,6 +10,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 
 import ai.devpath.learner.model.Learner;
+import ai.devpath.learner.model.ExperienceBand;
 import ai.devpath.learner.model.LearningStyle;
 import ai.devpath.learner.model.PreferredLanguage;
 import ai.devpath.learner.model.ProfileStatus;
@@ -30,8 +31,8 @@ class LearnerRepositoryTest {
     void persistsAndReadsJsonbSkillsAndStudyDays() {
         Learner learner = new Learner(
                 "QA Engineer",
-                5,
-                "API Testing",
+                ExperienceBand.FOUR_TO_FIVE,
+                List.of("API Testing", "Database Testing"),
                 List.of("Postman", "SQL"),
                 "Java Backend Developer",
                 PreferredLanguage.JAVA,
@@ -45,6 +46,8 @@ class LearnerRepositoryTest {
         entityManager.clear();
 
         Learner loaded = learnerRepository.findById(saved.getId()).orElseThrow();
+        assertThat(loaded.getExperienceBand()).isEqualTo(ExperienceBand.FOUR_TO_FIVE);
+        assertThat(loaded.getSpecializations()).containsExactly("API Testing", "Database Testing");
         assertThat(loaded.getExistingSkills()).containsExactly("Postman", "SQL");
         assertThat(loaded.getStudyDays())
                 .containsExactly(StudyDay.MONDAY, StudyDay.WEDNESDAY, StudyDay.SATURDAY);

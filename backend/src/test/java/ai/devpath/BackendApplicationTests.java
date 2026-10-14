@@ -43,9 +43,12 @@ class BackendApplicationTests {
 				.contains("\"title\":\"DevPath AI API\"")
 				.contains("\"/api/v1/learners\"")
 				.contains("\"/api/v1/learners/{learnerId}\"")
+				.contains("\"/api/v1/learners/{learnerId}/progress\"")
 				.contains("\"summary\":\"Create a learner profile\"")
 				.contains("\"summary\":\"Get a learner profile\"")
-				.contains("\"yearsOfExperience\"")
+				.contains("\"summary\":\"Get persisted learner progress\"")
+				.contains("\"experienceBand\"")
+				.contains("\"specializations\"")
 				.contains("\"fieldErrors\"")
 				.contains("\"Location\"");
 	}

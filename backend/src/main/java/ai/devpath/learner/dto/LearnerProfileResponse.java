@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+import ai.devpath.learner.model.ExperienceBand;
 import ai.devpath.learner.model.LearningStyle;
 import ai.devpath.learner.model.PreferredLanguage;
 import ai.devpath.learner.model.ProfileStatus;
@@ -14,8 +15,8 @@ import ai.devpath.learner.model.StudyDay;
 public record LearnerProfileResponse(
         UUID id,
         String currentRole,
-        int yearsOfExperience,
-        String specialization,
+        ExperienceBand experienceBand,
+        List<String> specializations,
         List<String> existingSkills,
         String targetRole,
         PreferredLanguage preferredLanguage,

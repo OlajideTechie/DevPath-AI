@@ -42,3 +42,40 @@ The initial POC has NO authentication. UUIDs are not access control. Use synthet
 Report: (1) changes made, (2) files changed, (3) commands/tests run and outcomes, (4) remaining risks, (5) next small task.
 
 `AGENTS.md` instructs Codex; it does NOT automatically log activity. Use Git/PRs for code history, `docs/progress.md` for milestones, and `docs/decisions.md` for architectural decisions.
+
+## Capstone Delivery Constraints
+
+Submission deadline: Wednesday, October 14, 2026.
+
+The application will be demonstrated locally
+through a screen recording.
+
+Deployment is NOT required.
+
+Prioritize:
+1. Working end-to-end learner journey.
+2. Functional Spring Boot REST APIs.
+3. AI-powered exercise feedback.
+4. Persistent learner progress.
+5. Polished, responsive frontend.
+6. Automated tests and demo reliability.
+
+Do not implement:
+- Cloud deployment configuration
+- Authentication or registration flows
+- Payment integration
+- Notifications
+- Multiple learning tracks
+- Complex AI agents
+- Microservices
+
+The application must run locally with:
+- React frontend
+- Spring Boot backend
+- PostgreSQL database
+- An LLM API configured through environment variables
+
+Provide clear local startup instructions.
+
+Never claim LLM feedback represents actual
+code compilation or test execution.

@@ -13,6 +13,12 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import ai.devpath.learner.service.LearnerNotFoundException;
+import ai.devpath.curriculum.service.LessonNotFoundException;
+import ai.devpath.feedback.service.FeedbackProviderConfigurationException;
+import ai.devpath.feedback.service.FeedbackProviderException;
+import ai.devpath.recall.service.RecallEvidenceRequiredException;
+import ai.devpath.recall.service.RecallNotFoundException;
+import ai.devpath.recall.service.UnsupportedCompetencyTagException;
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
@@ -42,5 +48,39 @@ public class ApiExceptionHandler {
     @ExceptionHandler(LearnerNotFoundException.class)
     public ResponseEntity<ApiErrorResponse> handleLearnerNotFound(LearnerNotFoundException exception) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiErrorResponse.learnerNotFound());
+    }
+
+    @ExceptionHandler(RecallNotFoundException.class)
+    public ResponseEntity<ApiErrorResponse> handleRecallNotFound(RecallNotFoundException exception) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ApiErrorResponse("RECALL_NOT_FOUND", "No active recall found for this competency", null));
+    }
+
+    @ExceptionHandler(RecallEvidenceRequiredException.class)
+    public ResponseEntity<ApiErrorResponse> handleRecallEvidenceRequired(RecallEvidenceRequiredException exception) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new ApiErrorResponse("RECALL_EVIDENCE_REQUIRED", exception.getMessage(), null));
+    }
+
+    @ExceptionHandler(UnsupportedCompetencyTagException.class)
+    public ResponseEntity<ApiErrorResponse> handleUnsupportedCompetencyTag(
+            UnsupportedCompetencyTagException exception) {
+        return ResponseEntity.badRequest().body(
+                ApiErrorResponse.validationError(Map.of("competencyTag", exception.getMessage())));
+    }
+
+    @ExceptionHandler(LessonNotFoundException.class)
+    public ResponseEntity<ApiErrorResponse> handleLessonNotFound(LessonNotFoundException exception) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ApiErrorResponse("LESSON_NOT_FOUND", "Lesson not found", null));
+    }
+
+    @ExceptionHandler({FeedbackProviderException.class, FeedbackProviderConfigurationException.class})
+    public ResponseEntity<ApiErrorResponse> handleFeedbackUnavailable(RuntimeException exception) {
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(new ApiErrorResponse(
+                        "AI_FEEDBACK_UNAVAILABLE",
+                        "Advisory feedback is temporarily unavailable. Your attempt was recorded; please retry.",
+                        null));
     }
 }

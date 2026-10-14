@@ -38,10 +38,10 @@ class LearnerControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "currentRole": "QA Engineer",
-                                  "yearsOfExperience": 5,
-                                  "specialization": "API Testing",
-                                  "existingSkills": [" Postman ", "SQL", "Postman"],
+                                  "currentRole": "Client supplied role",
+                                  "experienceBand": "FOUR_TO_FIVE",
+                                  "specializations": ["API Testing", "Database Testing"],
+                                  "existingSkills": [" Postman ", "SQL", "Postman", "sql"],
                                   "programmingLevel": "BEGINNER",
                                   "studyDays": ["MONDAY", "WEDNESDAY", "SATURDAY"],
                                   "dailyMinutes": 45,
@@ -60,14 +60,17 @@ class LearnerControllerTest {
                 .andExpect(jsonPath("$.programmingLevel").value("BEGINNER"))
                 .andExpect(jsonPath("$.profileStatus").value("CREATED"))
                 .andExpect(jsonPath("$.createdAt").isNotEmpty())
-                .andExpect(jsonPath("$.message").doesNotExist())
-                .andExpect(jsonPath("$.yearsOfExperience").doesNotExist());
+                .andExpect(jsonPath("$.message").doesNotExist());
 
         String location = result.andReturn().getResponse().getHeader("Location");
         assertThat(location).matches("/api/v1/learners/[0-9a-f-]{36}");
         Learner learner = learnerRepository.findById(
                 UUID.fromString(location.substring(location.lastIndexOf('/') + 1))).orElseThrow();
         assertThat(learner.getExistingSkills()).containsExactly("Postman", "SQL");
+        assertThat(learner.getCurrentRole()).isEqualTo("QA Engineer");
+        assertThat(learner.getExperienceBand().name()).isEqualTo("FOUR_TO_FIVE");
+        assertThat(learner.getSpecializations()).containsExactly("API Testing", "Database Testing");
+        assertThat(learner.getYearsOfExperience()).isEqualTo(4);
         assertThat(learner.getStudyDays()).containsExactly(
                 StudyDay.MONDAY,
                 StudyDay.WEDNESDAY,
@@ -84,9 +87,8 @@ class LearnerControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "currentRole": "QA Engineer",
-                                  "yearsOfExperience": 5,
-                                  "specialization": "API Testing",
+                                  "experienceBand": "FOUR_TO_FIVE",
+                                  "specializations": ["API Testing"],
                                   "existingSkills": ["Postman", "SQL"],
                                   "programmingLevel": "INTERMEDIATE",
                                   "studyDays": ["MONDAY", "WEDNESDAY", "SATURDAY"],
@@ -104,8 +106,8 @@ class LearnerControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(learner.getId().toString()))
                 .andExpect(jsonPath("$.currentRole").value("QA Engineer"))
-                .andExpect(jsonPath("$.yearsOfExperience").value(5))
-                .andExpect(jsonPath("$.specialization").value("API Testing"))
+                .andExpect(jsonPath("$.experienceBand").value("FOUR_TO_FIVE"))
+                .andExpect(jsonPath("$.specializations[0]").value("API Testing"))
                 .andExpect(jsonPath("$.existingSkills").isArray())
                 .andExpect(jsonPath("$.existingSkills[0]").value("Postman"))
                 .andExpect(jsonPath("$.existingSkills[1]").value("SQL"))
@@ -165,9 +167,8 @@ class LearnerControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "currentRole": "QA Engineer",
-                                  "yearsOfExperience": 5,
-                                  "specialization": "API Testing",
+                                  "experienceBand": "FOUR_TO_FIVE",
+                                  "specializations": ["API Testing"],
                                   "existingSkills": ["SQL"],
                                   "programmingLevel": "BEGINNER",
                                   "studyDays": ["MONDAY", "MONDAY"],
@@ -184,6 +185,29 @@ class LearnerControllerTest {
     }
 
     @Test
+    void rejectsLearnerWithoutQaSpecialization() throws Exception {
+        MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(context).build();
+        long initialCount = learnerRepository.count();
+        mockMvc.perform(post("/api/v1/learners")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "experienceBand": "FOUR_TO_FIVE",
+                                  "specializations": [],
+                                  "existingSkills": [],
+                                  "programmingLevel": "BEGINNER",
+                                  "studyDays": ["MONDAY"],
+                                  "dailyMinutes": 45,
+                                  "learningStyle": "PRACTICAL"
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors.specializations").exists());
+
+        assertThat(learnerRepository.count()).isEqualTo(initialCount);
+    }
+
+    @Test
     void rejectsUnknownEnumValuesWithValidationEnvelope() throws Exception {
         MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(context).build();
         long initialCount = learnerRepository.count();
@@ -191,9 +215,8 @@ class LearnerControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "currentRole": "QA Engineer",
-                                  "yearsOfExperience": 5,
-                                  "specialization": "API Testing",
+                                  "experienceBand": "UNKNOWN",
+                                  "specializations": ["API Testing"],
                                   "existingSkills": ["SQL"],
                                   "programmingLevel": "NOVICE",
                                   "studyDays": ["MONDAY"],
@@ -212,9 +235,8 @@ class LearnerControllerTest {
     private String validRequest(int dailyMinutes) {
         return """
                 {
-                  "currentRole": "QA Engineer",
-                  "yearsOfExperience": 5,
-                  "specialization": "API Testing",
+                  "experienceBand": "FOUR_TO_FIVE",
+                  "specializations": ["API Testing"],
                   "existingSkills": ["SQL"],
                   "programmingLevel": "BEGINNER",
                   "studyDays": ["MONDAY", "WEDNESDAY"],

@@ -31,8 +31,8 @@ const createdProfile: LearnerCreatedResponse = {
 
 const savedProfile: LearnerProfileResponse = {
   ...createdProfile,
-  yearsOfExperience: 5,
-  specialization: 'API Testing',
+  experienceBand: 'FOUR_TO_FIVE',
+  specializations: ['API Testing', 'Database Testing'],
   existingSkills: ['Postman', 'SQL'],
   studyDays: ['MONDAY', 'WEDNESDAY'],
   dailyMinutes: 45,
@@ -48,13 +48,13 @@ function renderWizard() {
 }
 
 async function completeBackgroundStep(user: ReturnType<typeof userEvent.setup>) {
-  await user.type(screen.getByLabelText('Current role'), 'QA Engineer')
-  await user.type(screen.getByLabelText('Years of experience'), '5')
-  await user.type(screen.getByLabelText('QA specialization'), 'API Testing')
-  await user.type(screen.getByLabelText(/Skills you already use/), 'Postman')
-  await user.click(screen.getByRole('button', { name: 'Add skill' }))
-  await user.type(screen.getByLabelText(/Skills you already use/), 'SQL')
-  await user.click(screen.getByRole('button', { name: 'Add skill' }))
+  await user.selectOptions(screen.getByLabelText('Years of experience'), 'FOUR_TO_FIVE')
+  await user.click(screen.getByRole('button', { name: 'API Testing' }))
+  await user.click(screen.getByRole('button', { name: 'Database Testing' }))
+  await user.type(screen.getByLabelText('Existing technical skills (optional)'), 'Postman')
+  await user.click(screen.getByRole('button', { name: 'Postman' }))
+  await user.type(screen.getByLabelText('Existing technical skills (optional)'), 'SQL')
+  await user.click(screen.getByRole('button', { name: 'SQL' }))
   await user.click(screen.getByRole('button', { name: 'Continue' }))
 }
 
@@ -84,9 +84,8 @@ describe('onboarding wizard', () => {
 
     await user.click(screen.getByRole('button', { name: 'Continue' }))
 
-    expect(screen.getByText('Enter your current role.')).toBeInTheDocument()
-    expect(screen.getByText('Enter your years of experience.')).toBeInTheDocument()
-    expect(screen.getByText('Enter your QA specialization.')).toBeInTheDocument()
+    expect(screen.getByText('Choose your experience range.')).toBeInTheDocument()
+    expect(screen.getByText('Choose at least one QA specialization.')).toBeInTheDocument()
     expect(createLearnerMock).not.toHaveBeenCalled()
   })
 
@@ -101,6 +100,7 @@ describe('onboarding wizard', () => {
     await completeAvailabilityStep(user)
 
     expect(screen.getByRole('heading', { name: 'Review' })).toBeInTheDocument()
+    expect(screen.getByText('API Testing, Database Testing')).toBeInTheDocument()
     expect(screen.getByText('Postman, SQL')).toBeInTheDocument()
     expect(screen.getByText('Java Backend Developer')).toBeInTheDocument()
     expect(screen.getByText('Monday, Wednesday')).toBeInTheDocument()
@@ -108,10 +108,11 @@ describe('onboarding wizard', () => {
     await user.click(screen.getByRole('button', { name: 'Save profile' }))
 
     expect(await screen.findByRole('heading', { name: 'Your profile is saved.' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /Continue to your learning dashboard/ }))
+      .toHaveAttribute('href', `/dashboard/${createdProfile.id}`)
     expect(createLearnerMock).toHaveBeenCalledWith({
-      currentRole: 'QA Engineer',
-      yearsOfExperience: 5,
-      specialization: 'API Testing',
+      experienceBand: 'FOUR_TO_FIVE',
+      specializations: ['API Testing', 'Database Testing'],
       existingSkills: ['Postman', 'SQL'],
       programmingLevel: 'BEGINNER',
       studyDays: ['MONDAY', 'WEDNESDAY'],
@@ -124,7 +125,7 @@ describe('onboarding wizard', () => {
 
     expect(await screen.findByRole('heading', { name: 'Retrieved profile' })).toBeInTheDocument()
     expect(getLearnerMock).toHaveBeenCalledWith(createdProfile.id)
-    expect(screen.getByText('API Testing')).toBeInTheDocument()
+    expect(screen.getByText('API Testing, Database Testing')).toBeInTheDocument()
   })
 
   it('allows returning to prior steps to edit review values', async () => {
@@ -136,8 +137,28 @@ describe('onboarding wizard', () => {
     await completeAvailabilityStep(user)
     await user.click(screen.getAllByRole('button', { name: 'Edit' })[0])
 
-    expect(screen.getByLabelText('Current role')).toHaveValue('QA Engineer')
-    expect(screen.getByLabelText(/Skills you already use/)).toHaveValue('')
+    expect(screen.getByText('QA Engineer')).toBeInTheDocument()
+    expect(screen.getByLabelText('Existing technical skills (optional)')).toHaveValue('')
+  })
+
+  it('allows the learner to skip optional skills', async () => {
+    const user = userEvent.setup()
+    createLearnerMock.mockResolvedValue(createdProfile)
+    renderWizard()
+
+    await user.selectOptions(screen.getByLabelText('Years of experience'), 'ZERO_TO_ONE')
+    await user.click(screen.getByRole('button', { name: 'Manual Testing' }))
+    await user.click(screen.getByRole('button', { name: 'Continue' }))
+    await completeGoalStep(user)
+    await completeAvailabilityStep(user)
+    await user.click(screen.getByRole('button', { name: 'Save profile' }))
+
+    await screen.findByRole('heading', { name: 'Your profile is saved.' })
+    expect(createLearnerMock).toHaveBeenCalledWith(expect.objectContaining({
+      experienceBand: 'ZERO_TO_ONE',
+      specializations: ['Manual Testing'],
+      existingSkills: [],
+    }))
   })
 
   it('shows API failures and permits retry without losing answers', async () => {

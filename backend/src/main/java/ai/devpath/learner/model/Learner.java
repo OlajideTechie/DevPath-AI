@@ -31,8 +31,16 @@ public class Learner {
     @Column(name = "years_of_experience", nullable = false)
     private int yearsOfExperience;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "experience_band", nullable = false, length = 20)
+    private ExperienceBand experienceBand;
+
     @Column(nullable = false, length = 100)
     private String specialization;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "specializations", nullable = false, columnDefinition = "jsonb")
+    private List<String> specializations;
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "existing_skills", nullable = false, columnDefinition = "jsonb")
@@ -75,8 +83,8 @@ public class Learner {
 
     public Learner(
             String currentRole,
-            int yearsOfExperience,
-            String specialization,
+            ExperienceBand experienceBand,
+            List<String> specializations,
             List<String> existingSkills,
             String targetRole,
             PreferredLanguage preferredLanguage,
@@ -86,8 +94,10 @@ public class Learner {
             LearningStyle learningStyle,
             ProfileStatus profileStatus) {
         this.currentRole = currentRole;
-        this.yearsOfExperience = yearsOfExperience;
-        this.specialization = specialization;
+        this.yearsOfExperience = experienceBand.lowerBoundYears();
+        this.experienceBand = experienceBand;
+        this.specialization = specializations.get(0);
+        this.specializations = List.copyOf(specializations);
         this.existingSkills = List.copyOf(existingSkills);
         this.targetRole = targetRole;
         this.preferredLanguage = preferredLanguage;
@@ -122,8 +132,16 @@ public class Learner {
         return yearsOfExperience;
     }
 
+    public ExperienceBand getExperienceBand() {
+        return experienceBand;
+    }
+
     public String getSpecialization() {
         return specialization;
+    }
+
+    public List<String> getSpecializations() {
+        return specializations;
     }
 
     public List<String> getExistingSkills() {

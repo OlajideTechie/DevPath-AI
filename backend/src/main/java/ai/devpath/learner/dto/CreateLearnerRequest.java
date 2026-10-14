@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.hibernate.validator.constraints.UniqueElements;
 
+import ai.devpath.learner.model.ExperienceBand;
 import ai.devpath.learner.model.LearningStyle;
 import ai.devpath.learner.model.ProgrammingLevel;
 import ai.devpath.learner.model.StudyDay;
@@ -15,10 +16,9 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 public record CreateLearnerRequest(
-        @NotBlank @Size(max = 100) String currentRole,
-        @NotNull @Min(value = 0, message = "must be between 0 and 50")
-        @Max(value = 50, message = "must be between 0 and 50") Integer yearsOfExperience,
-        @NotBlank @Size(max = 100) String specialization,
+        @NotNull ExperienceBand experienceBand,
+        @NotEmpty @Size(max = 9) @UniqueElements
+        List<@NotBlank @Size(max = 100) String> specializations,
         @NotNull @Size(max = 20) List<@NotBlank @Size(max = 100) String> existingSkills,
         @NotNull ProgrammingLevel programmingLevel,
         @NotEmpty @UniqueElements List<@NotNull StudyDay> studyDays,

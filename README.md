@@ -2,16 +2,18 @@
 
 **Turn your QA experience into a foundation for Java backend engineering.**
 
-DevPath AI is an onboarding prototype for QA engineers who want to move into
-Java backend development. Instead of treating a learner as a blank slate, the
-product starts by understanding their testing background, existing skills,
-Java proficiency, and available study time.
+DevPath AI is a local learning prototype for QA engineers who want to move
+into Java backend development. It connects a learner's QA background and
+schedule to a curated Java practice activity, then records submissions,
+advisory feedback, competency review states, and progress. It starts by
+understanding what the learner already knows rather than treating them as a
+blank slate.
 
-This hackathon release delivers the first vertical slice: a landing page, a
-guided learner-profile wizard, and a backend that validates, stores, and
-returns that profile. It demonstrates the foundation for a more personal
-learning journey; it does **not** yet teach lessons, assess coding ability, or
-generate a roadmap.
+The capstone extends an existing learner-onboarding application toward a
+complete local learning loop: understand the learner, teach, practice,
+evaluate, reinforce, and track progress. The local application includes the
+onboarding, curated Java lesson, advisory feedback, Learning Recall, and
+persisted progress phases.
 
 ## Why it matters
 
@@ -25,20 +27,22 @@ DevPath AI is designed to make that starting point explicit:
 
 - **Recognize transferable skills:** capture a learner's QA role,
   specialization, experience, and existing skills.
-- **Make the next step personal:** capture Java proficiency, study days,
-  available minutes, and learning preferences before designing future learning.
+- **Make the next step personal:** use Java proficiency, study days, available
+  minutes, and learning preferences to contextualize the starting lesson;
+  adapt QA examples from straightforward cases to more layered coverage based
+  on QA experience.
 - **Build trust with real persistence:** save the submitted profile in
   PostgreSQL and retrieve it from the API rather than showing a simulated
   success.
-- **Create a foundation for evidence-based progress:** future learning can
-  build on learner context and demonstrated work, rather than a one-size-fits-
-  all roadmap.
+- **Track evidence-based progress:** report persisted lesson attempts,
+  submissions, competency review states, latest feedback, and a deterministic
+  next activity rather than invented scores or streaks.
 
 The intended impact is a more grounded transition experience: learners can
 start from their actual strengths and constraints, and a future product can
 adapt instruction as they demonstrate progress. This release proves the
-onboarding and persistence foundation—not that learning outcomes have already
-been measured.
+goal is a relevant, evidence-based learning journey. Do not claim measured
+learning outcomes until the application has persisted evidence for them.
 
 ## What is implemented
 
@@ -47,21 +51,38 @@ been measured.
 - `POST /api/v1/learners` with request validation, normalized skills,
   server-controlled role/language/status, and a `201 Created` response with a
   `Location` header.
+- QA Engineer role fixed by the backend; categorical experience bands and
+  multi-select specialization data migrated additively from the earlier
+  profile schema.
 - `GET /api/v1/learners/{learnerId}` with persisted profile data and consistent
   not-found and invalid-ID errors.
 - PostgreSQL learner storage with JSONB fields managed by a Flyway migration.
+- Deterministic lesson recommendation, curated Java practice, persisted
+  advisory submissions, and targeted cross-context Learning Recall.
+- Persisted progress summary with lesson/submission counts, competency states,
+  latest available feedback, and an evidence-based next activity.
 - Minimal public health check at `GET /actuator/health`.
 - OpenAPI specification and interactive Swagger UI.
 - Configurable CORS for explicitly allowed frontend origins.
 - Frontend and backend tests covering core UI, API, validation, and persistence
   behavior.
 
-## What is not implemented
+## Scope and limitations
 
-This is an **M1 onboarding prototype**, not a complete learning platform. It
-does not include authentication, diagnostic assessments, generated roadmaps,
-lessons, code execution, AI features, or progress tracking. Those are possible
-future milestones and are intentionally not represented as working features.
+Additional learning tracks and future product expansion are not included.
+Code feedback is advisory: submissions are not compiled or executed, and
+feedback must not be presented as evidence that code passed tests. The progress
+summary reports persisted activity only; it does not claim measured learning
+outcomes. `READY_FOR_REVIEW` is a positive advisory recommendation, not proof
+of correctness. Demonstrated status also requires positive advisory feedback
+on both exercises and the learner's explicit confirmation.
+
+This modular monolith and PostgreSQL setup are suitable for a local hackathon
+proof of concept, not a production-scale service. The current release has one
+curated lesson, synchronous LLM feedback, and no authentication or learner
+ownership enforcement. Automated tests mock the feedback provider; configure
+and verify a real provider separately before relying on live feedback in a
+demo.
 
 ## Repository structure
 
@@ -70,8 +91,12 @@ future milestones and are intentionally not represented as working features.
 ├── backend/
 │   ├── src/main/java/ai/devpath/
 │   │   ├── common/                 # Shared CORS configuration and API errors
-│   │   └── learner/                # Learner controller, DTOs, service, model,
-│   │                               # repository, and profile enums
+│   │   ├── learner/                # Learner controller, DTOs, service, model,
+│   │   │                           # repository, and profile enums
+│   │   ├── curriculum/             # Curated starter lesson and recommendation
+│   │   ├── feedback/               # Persisted code attempts and advisory feedback
+│   │   ├── recall/                 # Persisted competency gaps and transfer practice
+│   │   └── progress/               # Persisted progress summary and next activity
 │   ├── src/main/resources/
 │   │   ├── db/migration/           # Versioned PostgreSQL schema (Flyway)
 │   │   └── application.properties  # Database, server, health, and CORS config
@@ -83,6 +108,9 @@ future milestones and are intentionally not represented as working features.
 │   ├── src/
 │   │   ├── api/                    # Typed learner API client and tests
 │   │   ├── onboarding/             # Wizard UI, styles, and interaction tests
+│   │   ├── dashboard/              # Learner dashboard, lesson recommendation
+│   │   ├── lesson/                 # Responsive lesson-and-practice workspace
+│   │   ├── recall/                 # Competency review and transfer exercise
 │   │   ├── assets/                 # Static visual assets
 │   │   ├── App.tsx                 # Routes and landing page
 │   │   └── index.css               # Global styles and Tailwind entry point
@@ -90,12 +118,14 @@ future milestones and are intentionally not represented as working features.
 │   ├── package.json                # Scripts and dependencies
 │   └── vite.config.ts              # Vite and frontend test configuration
 ├── docs/
-│   ├── product-requirements.md     # M1 scope, acceptance criteria, future scope
+│   ├── product-requirements.md     # Capstone goal, phases, boundaries
 │   ├── architecture-and-api.md     # Data model and API contracts
 │   ├── ui-flow.md                  # Screen and interaction requirements
 │   ├── decisions.md                # Technical and product decisions
-│   ├── codex-prompts.md            # Reusable project prompts
-│   └── progress.md                 # Milestone status and verification record
+│   ├── codex-prompts.md            # Historical implementation prompts
+│   ├── api-contracts.md            # Current API contracts and response examples
+│   ├── codex-worklog.md            # Verified phase worklog
+│   └── progress.md                 # Capstone phase status and test evidence
 ├── .gitignore
 └── README.md
 ```
@@ -110,8 +140,8 @@ future milestones and are intentionally not represented as working features.
   rather than exposing database entities.
 - **Flyway migrations make storage repeatable:** the learner schema is
   version-controlled and can be applied consistently across environments.
-- **`docs/` keeps scope honest:** requirements and decisions distinguish
-  working M1 behavior from ideas reserved for later milestones.
+- **`docs/` keeps scope honest:** requirements, API contracts, and decisions
+  describe implemented behavior and identify remaining follow-up work.
 
 ## Architecture
 
@@ -125,10 +155,10 @@ Spring Boot modular monolith
        PostgreSQL
 ```
 
-The frontend communicates with the backend over HTTP in local development. The
-backend owns validation and server-controlled profile fields. PostgreSQL stores
-the profile, including JSONB skill and study-day data. There are no
-microservices, queues, or AI calls in this release.
+The frontend communicates with the backend over HTTP locally. The backend
+owns validation and server-controlled profile fields. PostgreSQL stores the
+profile, including JSONB arrays. Curated lessons stay separate from backend
+application logic; any LLM provider call belongs on the backend only.
 
 ## Run locally
 
@@ -159,6 +189,21 @@ These credentials are examples for a local machine only. Never reuse them for
 a shared, public, or production environment. If you choose different values,
 update the matching variables in `backend/.env`.
 
+To enable real advisory feedback, add your provider key as
+`AI_PROVIDER_API_KEY` in `backend/.env` only. The backend uses an
+OpenAI-compatible chat completions endpoint by default; configure
+`AI_PROVIDER_BASE_URL` and `AI_PROVIDER_MODEL` there if needed. Without a key,
+lesson loading still works, while submissions return a retryable unavailable
+response and are recorded as failed feedback attempts. Never add provider
+credentials to frontend environment variables.
+
+For a screen-recorded demo when the provider is unavailable, set
+`AI_DEMO_MODE=true` in `backend/.env` and restart the backend. This opt-in mode
+returns a clearly labeled sample response, not an assessment of the submitted
+code. It is marked uncertain, creates no competency gaps, and never activates
+automatically when a live provider fails. Set it back to `false` to use the
+provider again.
+
 ### 2. Start the backend
 
 In a terminal:
@@ -174,6 +219,26 @@ set +a
 
 The first start applies the Flyway migration. The API listens on
 `http://localhost:8080` by default.
+LLM connection diagnostics (request start, HTTP status, duration, response
+shape/schema failure details, and transport failure category) are printed in
+this backend terminal. API keys, prompts, learner code, and provider response
+bodies are not logged.
+
+For a managed PostgreSQL provider such as Neon, set `SPRING_DATASOURCE_URL` in
+`backend/.env` to a JDBC URL beginning with `jdbc:postgresql://`, using the
+provider's host and database. For example:
+
+```dotenv
+SPRING_DATASOURCE_URL="jdbc:postgresql://<host>/<database>?sslmode=require"
+SPRING_DATASOURCE_USERNAME=<database-user>
+SPRING_DATASOURCE_PASSWORD=<database-password>
+```
+
+Do not paste a provider URI beginning with `postgres://` or `postgresql://`
+directly into `SPRING_DATASOURCE_URL`; Spring expects the JDBC prefix. Keep
+username and password in their corresponding variables. Quote the URL if its
+query string contains shell-special characters, then reload `backend/.env`
+before starting the application.
 
 ### 3. Start the frontend
 
@@ -193,9 +258,7 @@ Open the local URL printed by Vite (normally
 The backend's `FRONTEND_ORIGINS` setting must list the exact browser origin
 used for the frontend. The local example allows both `http://localhost:5173`
 and `http://127.0.0.1:5173`. Restart the backend after changing its
-environment. For a deployed frontend, configure `VITE_API_BASE_URL` with the
-reachable HTTPS API origin, configure `FRONTEND_ORIGINS` with the deployed
-frontend origin, and rebuild/restart as appropriate.
+environment. Cloud deployment is not required for the capstone.
 
 ## API and operational endpoints
 
@@ -203,6 +266,13 @@ frontend origin, and rebuild/restart as appropriate.
 | --- | --- | --- |
 | `POST` | `/api/v1/learners` | Validate and save a learner profile; returns `201` and a `Location` header |
 | `GET` | `/api/v1/learners/{learnerId}` | Retrieve a saved learner profile |
+| `GET` | `/api/v1/learners/{learnerId}/recommended-lesson` | Get the personalized starting-lesson recommendation |
+| `GET` | `/api/v1/lessons/{lessonId}` | Get curated lesson content and its exercise |
+| `POST` | `/api/v1/learners/{learnerId}/lessons/{lessonId}/submissions` | Persist a code attempt and return advisory feedback |
+| `GET` | `/api/v1/learners/{learnerId}/recall` | Get persisted competency status and the transfer exercise |
+| `POST` | `/api/v1/learners/{learnerId}/recall/submissions` | Submit the transfer exercise for advisory feedback |
+| `POST` | `/api/v1/learners/{learnerId}/recall/{competencyTag}/demonstration` | Confirm competency after the assessment policy is met |
+| `GET` | `/api/v1/learners/{learnerId}/progress` | Get persisted activity, competency states, latest feedback, and next activity |
 | `GET` | `/actuator/health` | Minimal service health status |
 | `GET` | `/swagger-ui/index.html` | Interactive API documentation |
 | `GET` | `/v3/api-docs` | OpenAPI JSON document |
@@ -218,9 +288,8 @@ Example profile creation:
 curl -i http://localhost:8080/api/v1/learners \
   -H 'Content-Type: application/json' \
   -d '{
-    "currentRole": "QA Engineer",
-    "yearsOfExperience": 5,
-    "specialization": "API Testing",
+    "experienceBand": "FOUR_TO_FIVE",
+    "specializations": ["API Testing", "Database Testing"],
     "existingSkills": ["Postman", "SQL"],
     "programmingLevel": "BEGINNER",
     "studyDays": ["MONDAY", "WEDNESDAY", "SATURDAY"],
@@ -275,42 +344,26 @@ collect personal details or expose real learner records in a public demo.
 Environment files containing local configuration are ignored by Git; commit
 only the `.env.example` templates. Before using real users, add authentication,
 ownership enforcement, privacy and deletion controls, and abuse protection.
-For deployment, use managed secrets, HTTPS, and a narrowly configured
-`FRONTEND_ORIGINS` allowlist.
 
-## Continuous integration and Render deployment
+## Capstone execution
 
-The GitHub Actions workflow at
-[`.github/workflows/ci-cd.yml`](.github/workflows/ci-cd.yml) runs on pull
-requests to `main`, pushes to `main`, and manual dispatches. It runs the
-frontend test suite and backend tests against an ephemeral PostgreSQL 17
-service. A Render deployment is triggered only for a push to `main` or a
-manual run on `main`, and only after both test jobs pass. Pull requests never
-trigger a deployment. Render performs the service build during deployment.
+The capstone is designed to run locally for a screen-recorded demo; cloud
+deployment is not required. The existing GitHub workflow and deployment
+configuration came from the earlier M1 setup and are not part of this local
+demo setup. Start the frontend, Spring Boot backend, and PostgreSQL using the
+local instructions above.
 
-To enable deployment:
+The implemented learner journey includes onboarding, a recommended curated
+Java lesson, persisted exercise submissions, backend-only advisory LLM
+feedback, Learning Recall with the original gap-causing submission available
+for review, and persisted progress reporting. The learner role is
+server-controlled as QA Engineer; the profile API accepts an `experienceBand`
+and an array of `specializations`. See
+[`docs/api-contracts.md`](docs/api-contracts.md) for current request and
+response contracts.
 
-1. Create a Render **Web Service** for the backend from this repository.
-   Choose Docker, set the root directory to `backend`, and set the Dockerfile
-   path to `Dockerfile`. Set the health check path to `/actuator/health`.
-2. Configure the service's runtime environment variables in Render:
-   `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`,
-   `SPRING_DATASOURCE_PASSWORD`, and `FRONTEND_ORIGINS`. Use the internal
-   database URL if the PostgreSQL provider offers one; otherwise use the
-   provider's external TLS connection URL converted to JDBC format. Do not
-   store production credentials in the repository.
-3. In the Render service settings, create a deploy hook and disable automatic
-   deploys so deployment happens only after CI passes.
-4. Add the full hook URL in the GitHub repository's **Settings → Secrets and
-   variables → Actions** as `RENDER_DEPLOY_HOOK_URL`. The backend test
-   database defaults to temporary CI-only credentials; optionally set the
-   Actions variable `CI_POSTGRES_USER` and secret `CI_POSTGRES_PASSWORD` to
-   customize them. These credentials are used only by the ephemeral PostgreSQL
-   service for tests, not by the Render deployment.
-5. Push to `main` or manually run **CI and Render deployment** on `main`.
-
-The workflow deploys **only the backend**. Configure frontend hosting
-separately, and set its build-time `VITE_API_BASE_URL` to the deployed backend
-origin. Set `FRONTEND_ORIGINS` to the exact deployed frontend origin. Confirm
-the resulting backend deployment is healthy at
-`https://<backend-service>.onrender.com/actuator/health`.
+Configure `AI_PROVIDER_API_KEY` only in `backend/.env` to request live
+feedback. Automated tests mock the provider, so verify the configured provider
+connection and response before a demo that depends on it. If it is unavailable,
+submission feedback returns a retryable error and no successful feedback is
+simulated.

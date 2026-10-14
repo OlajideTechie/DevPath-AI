@@ -8,3 +8,8 @@ target/
 *.log
 .idea/
 .vscode/
+progress.md
+docs/ui-flow.md
+AGENTS.md
+docs/codex-working.md
+docs/codex-prompts.md
