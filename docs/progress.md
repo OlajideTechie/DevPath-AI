@@ -20,6 +20,7 @@ Current checkpoint: **Phase 6 — Persisted Progress**
 - [x] Phase 5: persisted competency gaps and related transfer exercise.
 - [x] Phase 5 lifecycle, explicit evidence policy, and recall UI tests.
 - [x] Phase 6: persisted progress API and dashboard summary.
+- [x] Google Drive demo linked from the README.
 
 ## Phase 1 implementation notes
 

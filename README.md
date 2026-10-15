@@ -67,6 +67,13 @@ learning outcomes until the application has persisted evidence for them.
 - Frontend and backend tests covering core UI, API, validation, and persistence
   behavior.
 
+## Demo
+
+[Watch the DevPath AI demo on Google Drive](https://drive.google.com/file/d/143-ML-ZSomIqF-T26HDh1dykQ3rYHO5_/view?usp=sharing).
+
+If you cannot access the video, check that its Google Drive sharing settings
+allow you to view it.
+
 ## Scope and limitations
 
 Additional learning tracks and future product expansion are not included.
